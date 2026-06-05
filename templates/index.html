@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI E-Commerce Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="bg-gray-900 text-white font-sans">
+
+<div class="fixed left-0 top-0 h-full w-64 bg-gray-800 p-6 shadow-lg">
+    <h2 class="text-2xl font-bold text-green-400 mb-6">AI Analytics</h2>
+    <div class="space-y-4">
+        <a href="/" class="block bg-green-500 py-2 text-center rounded-lg">Home</a>
+        <a href="/dashboard" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Dashboard</a>
+        <a href="/alerts" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Alerts</a>
+        <a href="/reports" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Reports</a>
+    </div>
+</div>
+
+<div class="ml-64 p-6">
+    <div class="flex justify-between items-center p-4 bg-gray-800 shadow-lg rounded-lg">
+        <h1 class="text-2xl font-bold text-green-400">Home</h1>
+    </div>
+
+    <div class="max-w-5xl mx-auto mt-10 space-y-6">
+
+        {% if file_loaded %}
+        <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-green-500">
+
+            <div class="flex items-center gap-3 mb-5">
+                <span class="text-green-400 text-2xl">✅</span>
+                <div>
+                    <h2 class="text-lg font-bold text-green-400">Dataset Already Loaded</h2>
+                    <p class="text-gray-400 text-sm">Model is trained and ready — no need to re-upload</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="bg-gray-700 rounded-lg p-4 text-center">
+                    <p class="text-gray-400 text-xs mb-1">File</p>
+                    <p class="text-white font-semibold text-sm truncate">{{ filename }}</p>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4 text-center">
+                    <p class="text-gray-400 text-xs mb-1">Rows</p>
+                    <p class="text-white font-semibold">{{ row_count }}</p>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4 text-center">
+                    <p class="text-gray-400 text-xs mb-1">Current Forecast</p>
+                    <p class="text-white font-semibold">{{ current_days }} Days</p>
+                </div>
+            </div>
+
+            <form method="POST" action="/reanalyze" id="reanalyzeForm">
+                <label class="text-sm text-gray-300 block mb-1">Change Forecast Days (1 to 60)</label>
+                <div class="flex gap-3 items-center flex-wrap">
+                    <input type="number" name="days" min="1" max="60"
+                           value="{{ current_days }}"
+                           class="p-2 rounded text-black w-32">
+                    <button id="reanalyzeBtn"
+                            class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded-lg font-semibold">
+                        ⚡ Quick Re-Forecast
+                    </button>
+                    <a href="/dashboard"
+                       class="bg-green-500 hover:bg-green-600 px-6 py-2 rounded-lg font-semibold text-center">
+                        📊 Go to Dashboard
+                    </a>
+                </div>
+                <p class="text-gray-500 text-xs mt-2">
+                    ⚡ Model already trained — sirf forecast recalculate hoga (~10-15 sec)
+                </p>
+            </form>
+
+            <div class="border-t border-gray-600 my-6"></div>
+
+            <div>
+                <h3 class="text-sm font-semibold text-yellow-400 mb-3">
+                    🔄 Upload New Dataset (existing session clear ho jayegi)
+                </h3>
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="flex gap-3 items-center flex-wrap">
+                        <input type="file" name="file" accept=".csv" class="text-gray-300 text-sm">
+                        <input type="number" name="days" min="1" max="60"
+                               value="{{ current_days }}" placeholder="Days"
+                               class="p-2 rounded text-black w-24">
+                        <button id="uploadSubmitBtn"
+                                class="bg-yellow-500 hover:bg-yellow-600 px-6 py-2 rounded-lg font-semibold text-gray-900">
+                            Upload & Re-Train
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="bg-gray-800 p-6 rounded-xl shadow-lg text-center">
+            <h2 class="text-xl font-semibold mb-4">Upload Your Dataset</h2>
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <input type="file" name="file" accept=".csv"
+                       class="mb-4 block w-full text-gray-300">
+                <div class="text-left mb-4">
+                    <label class="text-sm text-gray-300">Select Forecast Days (1 to 60)</label>
+                    <input type="number" name="days" min="1" max="60"
+                           value="{{ days|default(7) }}"
+                           class="w-full mt-1 p-2 rounded text-black">
+                </div>
+                <button id="uploadSubmitBtn"
+                        class="bg-green-500 hover:bg-green-600 px-6 py-2 rounded-lg font-semibold">
+                    Start Full Analysis
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <p class="text-red-400 mt-4 text-center">{{ error }}</p>
+        {% endif %}
+        {% if success %}
+        <p class="text-green-400 mt-4 text-center">{{ success }}</p>
+        {% endif %}
+
+        {% if mapping %}
+        <div class="bg-gray-800 p-4 rounded-xl shadow-lg">
+            <h3 class="text-lg font-semibold mb-3">Detected Columns</h3>
+            <ul>{% for key, value in mapping.items() %}<li>{{ key }} → {{ value }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        {% if missing %}
+        <div class="bg-gray-800 p-4 rounded-xl shadow-lg">
+            <h3 class="text-lg font-semibold mb-3 text-yellow-400">Missing Columns</h3>
+            <ul>{% for col in missing %}<li>{{ col }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+const uploadForm      = document.getElementById("uploadForm");
+const uploadSubmitBtn = document.getElementById("uploadSubmitBtn");
+if (uploadForm && uploadSubmitBtn) {
+    uploadForm.addEventListener("submit", function () {
+        uploadSubmitBtn.disabled    = true;
+        uploadSubmitBtn.textContent = "Uploading & Training... please wait";
+        uploadSubmitBtn.classList.add("opacity-60");
+    });
+}
+const reanalyzeForm = document.getElementById("reanalyzeForm");
+const reanalyzeBtn  = document.getElementById("reanalyzeBtn");
+if (reanalyzeForm && reanalyzeBtn) {
+    reanalyzeForm.addEventListener("submit", function () {
+        reanalyzeBtn.disabled    = true;
+        reanalyzeBtn.textContent = "⚡ Recalculating... please wait";
+        reanalyzeBtn.classList.add("opacity-60");
+    });
+}
+</script>
+</body>
+</html>

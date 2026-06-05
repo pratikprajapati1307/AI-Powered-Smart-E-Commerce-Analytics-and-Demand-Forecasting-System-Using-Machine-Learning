@@ -1,0 +1,21 @@
+transaction_id,timestamp,product_id,product_name,category,brand,seller_id,customer_id,customer_segment,region,city,quantity_sold,price,discount,stock_available,shipping_fee,payment_method,fulfillment_type,return_requested,rating,coupon_code,device_type
+TXN2001,2026-03-01,601,Running Shoes,Fashion,SprintX,S9001,C2001,New,North,Delhi,1,2999,20,65,99,UPI,Warehouse,No,4.5,NEW20,Mobile
+TXN2002,2026-03-01,602,Protein Powder,Health,NutriCore,S9002,C2002,Repeat,West,Mumbai,1,1899,10,42,49,Card,Marketplace,No,4.3,FIT10,Desktop
+TXN2003,2026-03-01,603,Ceramic Coffee Mug,Home,UrbanNest,S9003,C2003,New,South,Chennai,2,399,15,120,39,COD,Warehouse,No,4.1,,Mobile
+TXN2004,2026-03-02,604,Noise Cancelling Headphones,Electronics,SoundMax,S9004,C2004,Repeat,South,Bengaluru,1,5999,18,21,129,UPI,Warehouse,No,4.6,AUDIO18,Tablet
+TXN2005,2026-03-02,605,Smart Watch,Electronics,TimeLoop,S9005,C2005,VIP,West,Pune,1,4499,12,28,99,Card,Warehouse,No,4.4,SMART12,Mobile
+TXN2006,2026-03-02,606,Backpack,Bags,CarryOn,S9006,C2006,New,East,Kolkata,1,1599,25,53,79,COD,Marketplace,Yes,4.0,BAG25,Desktop
+TXN2007,2026-03-03,607,Study Table,Furniture,WoodHive,S9007,C2007,Repeat,North,Noida,1,7499,8,14,249,Card,Warehouse,No,4.2,,Desktop
+TXN2008,2026-03-03,608,Face Serum,Beauty,GlowCare,S9008,C2008,VIP,West,Ahmedabad,2,899,10,84,39,UPI,Marketplace,No,4.7,SKIN10,Mobile
+TXN2009,2026-03-03,609,LED Desk Lamp,Home,LumaLite,S9003,C2009,New,Central,Indore,1,1299,5,36,59,UPI,Warehouse,No,4.3,,Tablet
+TXN2010,2026-03-04,610,Wireless Keyboard,Accessories,TypeGrid,S9009,C2010,Repeat,South,Hyderabad,1,2199,15,30,69,Card,Warehouse,No,4.5,KEY15,Desktop
+TXN2011,2026-03-04,601,Running Shoes,Fashion,SprintX,S9001,C2011,New,North,Delhi,2,2999,20,63,99,UPI,Warehouse,No,4.6,NEW20,Mobile
+TXN2012,2026-03-04,602,Protein Powder,Health,NutriCore,S9002,C2012,Repeat,West,Mumbai,1,1899,10,41,49,Card,Marketplace,No,4.2,FIT10,Desktop
+TXN2013,2026-03-05,603,Ceramic Coffee Mug,Home,UrbanNest,S9003,C2013,New,South,Chennai,3,399,15,117,39,COD,Warehouse,No,4.0,,Mobile
+TXN2014,2026-03-05,604,Noise Cancelling Headphones,Electronics,SoundMax,S9004,C2014,VIP,South,Bengaluru,1,5999,18,20,129,UPI,Warehouse,No,4.8,AUDIO18,Tablet
+TXN2015,2026-03-05,605,Smart Watch,Electronics,TimeLoop,S9005,C2015,Repeat,West,Pune,1,4499,12,27,99,Card,Warehouse,No,4.4,SMART12,Mobile
+TXN2016,2026-03-06,606,Backpack,Bags,CarryOn,S9006,C2016,New,East,Bhubaneswar,2,1599,25,51,79,COD,Marketplace,Yes,3.9,BAG25,Mobile
+TXN2017,2026-03-06,607,Study Table,Furniture,WoodHive,S9007,C2017,Repeat,North,Jaipur,1,7499,8,13,249,Card,Warehouse,No,4.1,,Desktop
+TXN2018,2026-03-06,608,Face Serum,Beauty,GlowCare,S9008,C2018,VIP,West,Surat,2,899,10,82,39,UPI,Marketplace,No,4.7,SKIN10,Mobile
+TXN2019,2026-03-07,609,LED Desk Lamp,Home,LumaLite,S9003,C2019,New,Central,Bhopal,1,1299,5,35,59,UPI,Warehouse,No,4.2,,Tablet
+TXN2020,2026-03-07,610,Wireless Keyboard,Accessories,TypeGrid,S9009,C2020,Repeat,South,Hyderabad,2,2199,15,28,69,Card,Warehouse,No,4.6,KEY15,Desktop

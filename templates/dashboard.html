@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="bg-gray-900 text-white">
+
+<div class="fixed left-0 top-0 h-full w-64 bg-gray-800 p-6 shadow-lg">
+    <h2 class="text-2xl font-bold text-green-400 mb-6">AI Analytics</h2>
+
+    <div class="space-y-4">
+        <a href="/" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Home</a>
+        <a href="/dashboard" class="block bg-green-500 py-2 text-center rounded-lg">Dashboard</a>
+        <a href="/alerts" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Alerts</a>
+        <a href="/reports" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Reports</a>
+    </div>
+</div>
+
+<div class="ml-64 p-6">
+    <div class="flex justify-between items-center p-4 bg-gray-800 shadow-lg rounded-lg">
+        <h1 class="text-2xl font-bold text-green-400">Dashboard</h1>
+    </div>
+    <br>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div class="bg-gray-800 p-4 rounded-xl">
+            <h3 class="text-gray-400">Total Sales</h3>
+            <p id="totalSalesValue" class="text-2xl font-bold">{{ total_sales }}</p>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl">
+            <h3 class="text-gray-400">Revenue</h3>
+            <p id="totalRevenueValue" class="text-2xl font-bold">{{ total_revenue_display }}</p>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl">
+            <div class="flex items-center justify-between gap-3 mb-2">
+                <h3 class="text-gray-400 ">Forecast Revenue</h3>
+                <span class=" text-xs text-gray-400">
+                    {{ forecast_days }} Days
+                </span>
+            </div>
+            <p id="predictedRevenueValue" class="text-2xl font-bold text-white leading-none">{{ predicted_revenue_display }}</p>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl">
+            <h3 class="text-gray-400">Avg Sales/Day</h3>
+            <p id="avgSalesPerDayValue" class="text-2xl font-bold">{{ avg_sales_day }}</p>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl">
+            <h3 class="text-gray-400">Model Accuracy (%)</h3>
+            <p class="text-2xl font-bold">{{ accuracy_percent }}%</p>
+        </div>
+
+    </div>
+
+    <div class="mt-6 text-center">
+        <p class="text-gray-400">
+            Forecast: <span class="text-green-400">{{ forecast_days }}</span> days
+        </p>
+    </div>
+
+
+
+    <div class="mt-4 bg-gray-800 p-4 rounded-xl text-center">
+        <p id="activeProductLabel" class="text-sm text-gray-300">Showing: All Products</p>
+    </div>
+
+    <div class="mt-6 bg-gray-800 p-5 rounded-xl">
+        <h3 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wide">Filter by Category & Product</h3>
+        <div class="flex flex-wrap gap-4 items-end">
+            <div class="flex flex-col gap-1 min-w-[180px]">
+                <label class="text-xs text-gray-400">Category</label>
+                <select id="categoryDropdown" class="bg-gray-700 text-white text-sm rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:border-green-400">
+                    <option value="">-- All Categories --</option>
+                    {% for cat in category_products.keys() | sort %}
+                    <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex flex-col gap-1 min-w-[200px]">
+                <label class="text-xs text-gray-400">Product</label>
+                <select id="productDropdown" class="bg-gray-700 text-white text-sm rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:border-green-400">
+                    <option value="">-- All Products --</option>
+                </select>
+            </div>
+            <button onclick="clearFilters()" class="bg-gray-600 hover:bg-gray-500 text-white text-sm px-4 py-2 rounded-lg transition">
+                Clear
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div class="bg-gray-800 p-4 rounded-xl flex flex-col" style="height:320px;">
+            <h3 class="mb-2 flex-shrink-0">Top Selling Products</h3>
+            <div class="relative flex-1 min-h-0">
+                <canvas id="topProductsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl flex flex-col" style="height:320px;">
+            <h3 class="mb-2 flex-shrink-0">Low Performing Products</h3>
+            <div class="relative flex-1 min-h-0">
+                <canvas id="bottomProductsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div class="bg-gray-800 p-4 rounded-xl flex flex-col" style="height:320px;">
+            <h3 class="mb-2 flex-shrink-0">Sales Trend</h3>
+            <div class="relative flex-1 min-h-0">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl flex flex-col" style="height:320px;">
+            <h3 class="mb-2 flex-shrink-0">Future Forecast</h3>
+            <div class="relative flex-1 min-h-0">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div class="bg-gray-800 p-4 rounded-xl flex flex-col" style="height:320px;">
+            <h3 class="mb-2 flex-shrink-0">Actual vs Predicted</h3>
+            <div class="relative flex-1 min-h-0">
+                <canvas id="actualPredictedChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl flex flex-col" style="height:320px;">
+            <h3 class="mb-2 flex-shrink-0">Monthly Demand (Historical)</h3>
+            <div class="relative flex-1 min-h-0">
+                <canvas id="seasonalChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="productRowsData" type="application/json">{{ product_rows | tojson }}</script>
+<script id="totalProductRows" type="application/json">{{ total_product_rows | tojson }}</script>
+<script id="futureDataJson" type="application/json">{{ future_data | tojson }}</script>
+<script id="futureByProductData" type="application/json">{{ future_by_product | tojson }}</script>
+<script id="productPriceMapData" type="application/json">{{ product_price_map | tojson }}</script>
+<script id="topProductsData" type="application/json">{{ top_products | tojson }}</script>
+<script id="bottomProductsData" type="application/json">{{ bottom_products | tojson }}</script>
+<script id="seasonalData" type="application/json">{{ seasonal | tojson }}</script>
+<script id="categoryProductsData" type="application/json">{{ category_products | tojson }}</script>
+<script id="categoryTopBottomData" type="application/json">{{ category_top_bottom | tojson }}</script>
+
+<script>
+function readJsonScript(id, fallback) {
+    const el = document.getElementById(id);
+    if (!el) {
+        return fallback;
+    }
+
+    try {
+        return JSON.parse(el.textContent);
+    } catch (_) {
+        return fallback;
+    }
+}
+
+// LAZY LOAD: initial rows only; rest fetched after page is interactive
+let allRows = readJsonScript("productRowsData", []);
+const _totalRows = readJsonScript("totalProductRows", allRows.length);
+if (_totalRows > allRows.length) {
+    setTimeout(function() {
+        fetch("/api/product-rows").then(function(r){ return r.json(); }).then(function(data){ allRows = data; if(typeof renderCharts==="function") renderCharts(); }).catch(function(){});
+    }, 800);
+}
+const futureData = readJsonScript("futureDataJson", []);
+const futureByProduct = readJsonScript("futureByProductData", {});
+const productPriceMap = readJsonScript("productPriceMapData", {});
+const topProducts = readJsonScript("topProductsData", {});
+const bottomProducts = readJsonScript("bottomProductsData", {});
+const seasonal = readJsonScript("seasonalData", {});
+const categoryProducts = readJsonScript("categoryProductsData", {});
+const categoryTopBottom = readJsonScript("categoryTopBottomData", {});
+
+let selectedProduct = null;
+let selectedCategory = null;
+let salesRawLabels = [];
+let forecastRawLabels = [];
+let actualPredRawLabels = [];
+let seasonalYearLabel = "";
+
+const totalSalesValue = document.getElementById("totalSalesValue");
+const totalRevenueValue = document.getElementById("totalRevenueValue");
+const predictedRevenueValue = document.getElementById("predictedRevenueValue");
+const avgSalesPerDayValue = document.getElementById("avgSalesPerDayValue");
+const activeProductLabel = document.getElementById("activeProductLabel");
+
+function groupSalesByDate(rows) {
+    const grouped = {};
+    rows.forEach(item => {
+        grouped[item.date] = (grouped[item.date] || 0) + Number(item.quantity_sold || 0);
+    });
+    const labels = Object.keys(grouped).sort();
+    const values = labels.map(date => grouped[date]);
+    return { labels, values };
+}
+
+function movingAverage(values, windowSize = 7) {
+    if (!values.length) {
+        return [];
+    }
+
+    const out = [];
+    for (let i = 0; i < values.length; i++) {
+        const start = Math.max(0, i - windowSize + 1);
+        const slice = values.slice(start, i + 1);
+        const avg = slice.reduce((sum, v) => sum + Number(v || 0), 0) / slice.length;
+        out.push(Math.round(avg));
+    }
+    return out;
+}
+
+function groupMonthlyDemand(rows) {
+    const grouped = {};
+    rows.forEach(item => {
+        const month = String(item.month);
+        grouped[month] = (grouped[month] || 0) + Number(item.quantity_sold || 0);
+    });
+    const labels = Object.keys(grouped).sort((a, b) => Number(a) - Number(b));
+    const values = labels.map(month => grouped[month]);
+    return { labels, values };
+}
+
+function groupActualVsPredictedByDate(rows) {
+    const grouped = {};
+    rows.forEach(item => {
+        const key = String(item.month);
+        if (!grouped[key]) {
+            grouped[key] = { actual: 0, predicted: 0 };
+        }
+        grouped[key].actual += Number(item.quantity_sold || 0);
+        grouped[key].predicted += Number(item.predicted_sales || 0);
+    });
+
+    const labels = Object.keys(grouped).sort((a, b) => Number(a) - Number(b));
+    const actualValues = labels.map(d => Math.round(grouped[d].actual));
+    const predictedValues = labels.map(d => Math.round(grouped[d].predicted));
+    return { labels, actualValues, predictedValues };
+}
+
+function buildPredictionBand(values) {
+    const lower = values.map(v => {
+        const base = Number(v || 0);
+        const pad = Math.max(base * 0.2, 8);
+        return Math.max(0, Number((base - pad).toFixed(2)));
+    });
+    const upper = values.map(v => {
+        const base = Number(v || 0);
+        const pad = Math.max(base * 0.2, 8);
+        return Number((base + pad).toFixed(2));
+    });
+    return { lower, upper };
+}
+
+function monthShortName(monthNumber) {
+    if (monthNumber === undefined || monthNumber === null || monthNumber === "") {
+        return "";
+    }
+    const monthMap = {
+        "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr",
+        "5": "May", "6": "Jun", "7": "Jul", "8": "Aug",
+        "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+    };
+    return monthMap[String(monthNumber)] || String(monthNumber);
+}
+
+function monthFullName(monthNumber) {
+    if (monthNumber === undefined || monthNumber === null || monthNumber === "") {
+        return "";
+    }
+    const monthMap = {
+        "1": "January", "2": "February", "3": "March", "4": "April",
+        "5": "May", "6": "June", "7": "July", "8": "August",
+        "9": "September", "10": "October", "11": "November", "12": "December"
+    };
+    return monthMap[String(monthNumber)] || String(monthNumber);
+}
+
+function monthNumberFromShortLabel(label) {
+    const reverse = {
+        "Jan": "1", "Feb": "2", "Mar": "3", "Apr": "4",
+        "May": "5", "Jun": "6", "Jul": "7", "Aug": "8",
+        "Sep": "9", "Oct": "10", "Nov": "11", "Dec": "12"
+    };
+    return reverse[String(label)] || "";
+}
+
+function getYearLabelFromRows(rows) {
+    const years = [];
+    rows.forEach(item => {
+        const d = new Date(item.date);
+        if (!Number.isNaN(d.getTime())) {
+            years.push(d.getFullYear());
+        }
+    });
+
+    if (!years.length) {
+        return "";
+    }
+
+    const minY = Math.min(...years);
+    const maxY = Math.max(...years);
+    return minY === maxY ? String(minY) : `${minY}-${maxY}`;
+}
+
+function getAllProductNames() {
+    const names = new Set();
+
+    allRows.forEach(item => {
+        if (item.product_name) {
+            names.add(item.product_name);
+        }
+    });
+
+    Object.values(categoryProducts).forEach(products => {
+        (products || []).forEach(name => names.add(name));
+    });
+
+    return Array.from(names).sort((a, b) => String(a).localeCompare(String(b)));
+}
+
+function populateProductDropdown(products, activeProduct = null) {
+    const productDropdown = document.getElementById("productDropdown");
+    productDropdown.innerHTML = '<option value="">-- All Products --</option>';
+
+    products.forEach(function (pName) {
+        const opt = document.createElement("option");
+        opt.value = pName;
+        opt.textContent = pName;
+        productDropdown.appendChild(opt);
+    });
+
+    productDropdown.value = activeProduct && products.includes(activeProduct) ? activeProduct : "";
+}
+
+function getFilteredRows() {
+    let rows = allRows;
+    if (selectedCategory) {
+        rows = rows.filter(item => item.category === selectedCategory);
+    }
+    if (selectedProduct) {
+        rows = rows.filter(item => item.product_name === selectedProduct);
+    }
+    return rows;
+}
+
+function aggregateForecastsForProducts(products) {
+    const grouped = {};
+
+    products.forEach(productName => {
+        const rows = futureByProduct[productName] || [];
+        rows.forEach(item => {
+            if (!grouped[item.date]) {
+                grouped[item.date] = 0;
+            }
+            grouped[item.date] += Number(item.predicted_sales || 0);
+        });
+    });
+
+    return Object.keys(grouped)
+        .sort()
+        .map(date => ({
+            date,
+            predicted_sales: Math.round(grouped[date])
+        }));
+}
+
+function getForecastForSelection() {
+    if (selectedProduct && futureByProduct[selectedProduct]) {
+        return futureByProduct[selectedProduct];
+    }
+
+    if (selectedCategory && categoryProducts[selectedCategory]) {
+        return aggregateForecastsForProducts(categoryProducts[selectedCategory]);
+    }
+
+    return futureData;
+}
+
+function updateSummary(rows) {
+    const sales = rows.reduce((sum, item) => sum + Number(item.quantity_sold || 0), 0);
+    const revenue = rows.reduce((sum, item) => sum + Number(item.revenue || 0), 0);
+    const uniqueDays = new Set(rows.map(item => item.date)).size || 1;
+    const avgSalesDay = sales / uniqueDays;
+    const selectedPrice = selectedProduct ? Number(productPriceMap[selectedProduct] || 0) : (rows.reduce((sum, item) => sum + Number(item.revenue || 0), 0) / Math.max(1, rows.reduce((sum, item) => sum + Number(item.quantity_sold || 0), 0)));
+    const forecastRows = getForecastForSelection();
+    const predictedRevenue = forecastRows.reduce((sum, item) => sum + Number(item.predicted_sales || 0) * selectedPrice, 0);
+
+    totalSalesValue.textContent = Math.round(sales);
+    totalRevenueValue.textContent = formatRevenueDisplay(revenue);
+    predictedRevenueValue.textContent = formatRevenueDisplay(predictedRevenue);
+    avgSalesPerDayValue.textContent = Math.round(avgSalesDay);
+}
+
+function formatDateLabel(value) {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
+        return String(value);
+    }
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+}
+
+function formatFullDate(value) {
+    if (value === undefined || value === null || value === "") {
+        return "";
+    }
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
+        return String(value);
+    }
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatDateWithFallbackYear(value, fallbackYear) {
+    const formatted = formatFullDate(value);
+    if (formatted && /\d{4}/.test(formatted)) {
+        return formatted;
+    }
+
+    const base = String(value || "").trim();
+    if (!base) {
+        return "";
+    }
+    if (fallbackYear) {
+        return `${base} ${fallbackYear}`;
+    }
+    return base;
+}
+
+function resolveTooltipRawLabel(items, rawLabels) {
+    if (!items || !items.length) {
+        return "";
+    }
+    const point = items[0] || {};
+    const idx = point.dataIndex;
+    if (idx !== undefined && idx !== null && rawLabels && rawLabels[idx] !== undefined) {
+        return rawLabels[idx];
+    }
+    if (idx !== undefined && idx !== null && point.chart && point.chart.data && point.chart.data.labels && point.chart.data.labels[idx] !== undefined) {
+        return point.chart.data.labels[idx];
+    }
+    return point.label || "";
+}
+
+function formatIndianNumber(value) {
+    return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.round(value));
+}
+
+function formatRevenueDisplay(value) {
+    return "Rs " + formatIndianNumber(value);
+}
+
+const commonLineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+        legend: { labels: { color: "#cbd5e1" } }
+    },
+    scales: {
+        x: {
+            ticks: {
+                color: "#94a3b8",
+                maxTicksLimit: 8,
+                autoSkip: true,
+                maxRotation: 0,
+                minRotation: 0
+            },
+            grid: { color: "rgba(148, 163, 184, 0.12)" }
+        },
+        y: {
+            beginAtZero: true,
+            ticks: { color: "#94a3b8" },
+            grid: { color: "rgba(148, 163, 184, 0.12)" }
+        }
+    }
+};
+
+const forecastLineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+        legend: { labels: { color: "#cbd5e1" } }
+    },
+    scales: {
+        x: {
+            ticks: {
+                color: "#94a3b8",
+                maxTicksLimit: 8,
+                autoSkip: true,
+                maxRotation: 0,
+                minRotation: 0
+            },
+            grid: { color: "rgba(148, 163, 184, 0.12)" }
+        },
+        y: {
+            beginAtZero: false,
+            ticks: { color: "#94a3b8" },
+            grid: { color: "rgba(148, 163, 184, 0.12)" }
+        }
+    }
+};
+
+function applyForecastAxisRange(values) {
+    if (!values || !values.length) {
+        return;
+    }
+
+    const minV = Math.min(...values);
+    const maxV = Math.max(...values);
+    const pad = Math.max((maxV - minV) * 0.25, 0.5);
+
+    forecastChart.options.scales.y.min = Math.max(0, minV - pad);
+    forecastChart.options.scales.y.max = maxV + pad;
+}
+
+const initialSales = groupSalesByDate(allRows);
+const initialActualPred = groupActualVsPredictedByDate(allRows);
+const initialForecast = futureData;
+salesRawLabels = initialSales.labels.slice();
+forecastRawLabels = initialForecast.map(x => x.date);
+actualPredRawLabels = initialActualPred.labels.slice();
+seasonalYearLabel = getYearLabelFromRows(allRows);
+const topLabels = Object.keys(topProducts);
+const topValues = Object.values(topProducts);
+const bottomLabels = Object.keys(bottomProducts);
+const bottomValues = Object.values(bottomProducts);
+const initialSeasonal = {
+    labels: Object.keys(seasonal),
+    values: Object.values(seasonal)
+};
+
+const salesChart = new Chart(document.getElementById("salesChart"), {
+    type: "line",
+    data: {
+        labels: initialSales.labels.map(formatDateLabel),
+        datasets: [{
+            label: "Sales Trend",
+            data: initialSales.values,
+            borderColor: "rgba(56, 189, 248, 1)",
+            backgroundColor: "rgba(56, 189, 248, 0.14)",
+            borderWidth: 2.5,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.25
+        }]
+    },
+    options: commonLineOptions
+});
+
+salesChart.options.plugins.tooltip = {
+    callbacks: {
+        title: (items) => {
+            return formatDateWithFallbackYear(resolveTooltipRawLabel(items, salesRawLabels), seasonalYearLabel);
+        },
+        label: (item) => item.dataset.label + ": " + Math.round(Number(item.raw || 0))
+    }
+};
+
+const forecastChart = new Chart(document.getElementById("forecastChart"), {
+    type: "line",
+    data: {
+        labels: initialForecast.map(x => formatDateLabel(x.date)),
+        datasets: [{
+            label: "Future Sales",
+            data: initialForecast.map(x => x.predicted_sales),
+            borderWidth: 2.5,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.3
+        }]
+    },
+    options: forecastLineOptions
+});
+
+applyForecastAxisRange(initialForecast.map(x => Number(x.predicted_sales || 0)));
+
+forecastChart.options.plugins.tooltip = {
+    callbacks: {
+        title: (items) => {
+            return formatDateWithFallbackYear(resolveTooltipRawLabel(items, forecastRawLabels), seasonalYearLabel);
+        },
+        label: (item) => item.dataset.label + ": " + Math.round(Number(item.raw || 0))
+    }
+};
+
+const actualPredictedChart = new Chart(document.getElementById("actualPredictedChart"), {
+    type: "line",
+    data: {
+        labels: initialActualPred.labels.map(monthShortName),
+        datasets: [{
+            label: "Actual",
+            data: initialActualPred.actualValues,
+            borderColor: "rgba(56, 189, 248, 1)",
+            backgroundColor: "rgba(0, 0, 0, 0)",
+            borderWidth: 3.2,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            fill: false,
+            tension: 0.25
+        }, {
+            label: "Predicted Lower",
+            data: buildPredictionBand(initialActualPred.predictedValues).lower,
+            borderColor: "rgba(59, 130, 246, 0)",
+            backgroundColor: "rgba(59, 130, 246, 0)",
+            borderWidth: 0,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.25
+        }, {
+            label: "Predicted Zone",
+            data: buildPredictionBand(initialActualPred.predictedValues).upper,
+            borderColor: "rgba(59, 130, 246, 0)",
+            backgroundColor: "rgba(59, 130, 246, 0.42)",
+            borderWidth: 0,
+            pointRadius: 0,
+            fill: "-1",
+            tension: 0.25
+        }]
+    },
+    options: commonLineOptions
+});
+
+actualPredictedChart.options.plugins.legend.labels.filter = (legendItem, chartData) => {
+    const ds = chartData.datasets[legendItem.datasetIndex];
+    return ds && ds.label !== "Predicted Lower";
+};
+
+actualPredictedChart.options.interaction = { mode: "nearest", intersect: false };
+actualPredictedChart.options.plugins.tooltip.filter = (ctx) => ctx.dataset && ctx.dataset.label === "Actual";
+actualPredictedChart.options.plugins.tooltip.callbacks = {
+    title: (items) => {
+        const rawMonth = resolveTooltipRawLabel(items, actualPredRawLabels);
+        const monthText = monthFullName(rawMonth) || String(rawMonth || "");
+        return seasonalYearLabel ? `${monthText} ${seasonalYearLabel}` : monthText;
+    },
+    label: (item) => "Actual: " + Math.round(Number(item.raw || 0))
+};
+
+const topProductsChart = new Chart(document.getElementById("topProductsChart"), {
+    type: "bar",
+    data: {
+        labels: topLabels,
+        datasets: [{
+            label: "Top Products",
+            data: topValues,
+            backgroundColor: topLabels.map(() => "rgba(34, 197, 94, 0.7)")
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (_, elements) => {
+            if (!elements.length) {
+                return;
+            }
+            const clickedIndex = elements[0].index;
+            const clickedProduct = topProductsChart.data.labels[clickedIndex];
+
+            if (selectedProduct === clickedProduct) {
+                selectedProduct = null;
+            } else {
+                selectedProduct = clickedProduct;
+            }
+
+            const productList = selectedCategory && categoryProducts[selectedCategory]
+                ? categoryProducts[selectedCategory]
+                : getAllProductNames();
+            populateProductDropdown(productList, selectedProduct);
+            refreshDashboard();
+        }
+    }
+});
+
+const bottomProductsChart = new Chart(document.getElementById("bottomProductsChart"), {
+    type: "bar",
+    data: {
+        labels: bottomLabels,
+        datasets: [{
+            label: "Bottom Products",
+            data: bottomValues,
+            backgroundColor: bottomLabels.map(() => "rgba(239, 68, 68, 0.65)")
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (_, elements) => {
+            if (!elements.length) {
+                return;
+            }
+            const clickedIndex = elements[0].index;
+            const clickedProduct = bottomProductsChart.data.labels[clickedIndex];
+
+            if (selectedProduct === clickedProduct) {
+                selectedProduct = null;
+            } else {
+                selectedProduct = clickedProduct;
+            }
+
+            const productList = selectedCategory && categoryProducts[selectedCategory]
+                ? categoryProducts[selectedCategory]
+                : getAllProductNames();
+            populateProductDropdown(productList, selectedProduct);
+            refreshDashboard();
+        }
+    }
+});
+
+const seasonalChart = new Chart(document.getElementById("seasonalChart"), {
+    type: "line",
+    data: {
+        labels: initialSeasonal.labels.map(monthShortName),
+        datasets: [{
+            label: "Monthly Demand",
+            data: initialSeasonal.values,
+            borderWidth: 2.5,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.35
+        }]
+    },
+    options: commonLineOptions
+});
+
+seasonalChart.options.plugins.tooltip = {
+    callbacks: {
+        title: (items) => {
+            if (!items.length) return "";
+            const idx = items[0].dataIndex;
+            const fallbackLabel = resolveTooltipRawLabel(items, []);
+            const rawMonth = initialSeasonal.labels[idx] || monthNumberFromShortLabel(fallbackLabel);
+            const monthText = monthFullName(rawMonth) || String(fallbackLabel || "");
+            return seasonalYearLabel ? `${monthText} ${seasonalYearLabel}` : monthText;
+        },
+        label: (item) => "Demand: " + Math.round(Number(item.raw || 0))
+    }
+};
+
+function refreshTopProductHighlight() {
+    // Agar category selected hai toh us category ke top/bottom dikhao
+    let topLabelsActive = topLabels;
+    let topValuesActive = topValues;
+    let bottomLabelsActive = bottomLabels;
+    let bottomValuesActive = bottomValues;
+
+    if (selectedCategory && categoryTopBottom[selectedCategory]) {
+        const catData = categoryTopBottom[selectedCategory];
+        topLabelsActive = Object.keys(catData.top);
+        topValuesActive = Object.values(catData.top);
+        bottomLabelsActive = Object.keys(catData.bottom);
+        bottomValuesActive = Object.values(catData.bottom);
+    }
+
+    topProductsChart.data.labels = topLabelsActive;
+    topProductsChart.data.datasets[0].data = topValuesActive;
+    topProductsChart.data.datasets[0].backgroundColor = topLabelsActive.map(name => {
+        if (selectedProduct && name === selectedProduct) return "rgba(59, 130, 246, 0.85)";
+        return "rgba(34, 197, 94, 0.7)";
+    });
+    topProductsChart.update();
+
+    bottomProductsChart.data.labels = bottomLabelsActive;
+    bottomProductsChart.data.datasets[0].data = bottomValuesActive;
+    bottomProductsChart.data.datasets[0].backgroundColor = bottomLabelsActive.map(name => {
+        if (selectedProduct && name === selectedProduct) return "rgba(59, 130, 246, 0.85)";
+        return "rgba(239, 68, 68, 0.65)";
+    });
+    bottomProductsChart.update();
+}
+
+function refreshDashboard() {
+    const filteredRows = getFilteredRows();
+    const sales = groupSalesByDate(filteredRows);
+    const actualPred = groupActualVsPredictedByDate(filteredRows);
+    const monthly = groupMonthlyDemand(filteredRows);
+    const forecast = getForecastForSelection();
+    salesRawLabels = sales.labels.slice();
+    forecastRawLabels = forecast.map(item => item.date);
+    actualPredRawLabels = actualPred.labels.slice();
+    seasonalYearLabel = getYearLabelFromRows(filteredRows);
+
+    salesChart.data.labels = sales.labels.map(formatDateLabel);
+    salesChart.data.datasets[0].data = sales.values;
+    salesChart.update();
+
+    forecastChart.data.labels = forecast.map(item => formatDateLabel(item.date));
+    const forecastValues = forecast.map(item => Number(item.predicted_sales || 0));
+    forecastChart.data.datasets[0].data = forecastValues;
+    applyForecastAxisRange(forecastValues);
+    forecastChart.update();
+
+    actualPredictedChart.data.labels = actualPred.labels.map(monthShortName);
+    const band = buildPredictionBand(actualPred.predictedValues);
+    actualPredictedChart.data.datasets[0].data = actualPred.actualValues;
+    actualPredictedChart.data.datasets[1].data = band.lower;
+    actualPredictedChart.data.datasets[2].data = band.upper;
+    actualPredictedChart.update();
+
+    seasonalChart.data.datasets[0].data = monthly.values;
+    seasonalChart.data.labels = monthly.labels.map(monthShortName);
+    seasonalChart.options.plugins.tooltip = {
+        callbacks: {
+            title: (items) => {
+                if (!items.length) return "";
+                const idx = items[0].dataIndex;
+                const fallbackLabel = resolveTooltipRawLabel(items, []);
+                const rawMonth = monthly.labels[idx] || monthNumberFromShortLabel(fallbackLabel);
+                const monthText = monthFullName(rawMonth) || String(fallbackLabel || "");
+                return seasonalYearLabel ? `${monthText} ${seasonalYearLabel}` : monthText;
+            },
+            label: (item) => "Demand: " + Math.round(Number(item.raw || 0))
+        }
+    };
+    seasonalChart.update();
+
+    updateSummary(filteredRows);
+    refreshTopProductHighlight();
+
+    if (selectedProduct) {
+        activeProductLabel.textContent = "Showing: " + selectedProduct;
+    } else if (selectedCategory) {
+        activeProductLabel.textContent = "Showing: " + selectedCategory + " (all products)";
+    } else {
+        activeProductLabel.textContent = "Showing: All Products";
+    }
+}
+
+// ── Category dropdown handler ──────────────────────────────
+document.getElementById("categoryDropdown").addEventListener("change", function () {
+    selectedCategory = this.value || null;
+    selectedProduct = null;
+
+    if (selectedCategory && categoryProducts[selectedCategory]) {
+        populateProductDropdown(categoryProducts[selectedCategory]);
+    } else {
+        populateProductDropdown(getAllProductNames());
+    }
+
+    refreshDashboard();
+});
+
+// ── Product dropdown handler ───────────────────────────────
+document.getElementById("productDropdown").addEventListener("change", function () {
+    selectedProduct = this.value || null;
+    refreshDashboard();
+});
+
+// ── Clear filter ───────────────────────────────────────────
+function clearFilters() {
+    selectedCategory = null;
+    selectedProduct = null;
+    document.getElementById("categoryDropdown").value = "";
+    populateProductDropdown(getAllProductNames());
+    refreshDashboard();
+}
+
+populateProductDropdown(getAllProductNames());
+updateSummary(allRows);
+refreshDashboard();
+
+</script>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+</html>

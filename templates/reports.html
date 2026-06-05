@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reports & Exports</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="bg-gray-900 text-white">
+<div class="fixed left-0 top-0 h-full w-64 bg-gray-800 p-6 shadow-lg">
+    <h2 class="text-2xl font-bold text-green-400 mb-6">Ecom-IQ</h2>
+
+    <div class="space-y-4">
+        <a href="/" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Home</a>
+        <a href="/dashboard" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Dashboard</a>
+        <a href="/alerts" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Alerts</a>
+        <a href="/reports" class="block bg-green-500 py-2 text-center rounded-lg">Reports</a>
+    </div>
+</div>
+
+<div class="ml-64 p-6">
+    <div class="flex justify-between items-center p-4 bg-gray-800 shadow-lg rounded-xl">
+        <h1 class="text-xl font-bold text-blue-400">Reports & Exports</h1>
+    </div>
+
+    <div class="max-w-7xl mx-auto mt-8">
+        <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-bold text-blue-300 mb-4">Report Info</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+                <div class="bg-gray-900/60 rounded-lg p-4">
+                    <p class="text-sm text-gray-400">Rows Processed</p>
+                    <p class="text-2xl font-bold">{{ report_info["rows_processed"] }}</p>
+                </div>
+                <div class="bg-gray-900/60 rounded-lg p-4">
+                    <p class="text-sm text-gray-400">Forecast Days</p>
+                    <p class="text-2xl font-bold">{{ report_info["forecast_days"] }}</p>
+                </div>
+                <div class="bg-gray-900/60 rounded-lg p-4">
+                    <p class="text-sm text-gray-400">Products Covered</p>
+                    <p class="text-2xl font-bold">{{ report_info["products_covered"] }}</p>
+                </div>
+                <div class="bg-gray-900/60 rounded-lg p-4">
+                    <p class="text-sm text-gray-400">Cleaned Rows</p>
+                    <p class="text-2xl font-bold">{{ report_info["cleaned_rows"] }}</p>
+                </div>
+            </div>
+
+            <p class="text-sm text-gray-500 mt-4 text-center">
+                Generated from latest analysis on {{ report_info["generated_on"] }}
+            </p>
+        </div>
+
+        {% if customer_items %}
+        <div class="mt-8 bg-gray-800 p-6 rounded-xl shadow-lg">
+            <h3 class="text-lg font-semibold mb-4">Customer Insights</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for customer, orders in customer_items %}
+                    <div class="bg-gray-900/60 rounded-lg p-4">
+                        <p class="text-sm text-gray-400">Customer</p>
+                        <p class="text-base font-semibold break-all">{{ customer }}</p>
+                        <p class="text-sm text-gray-400 mt-2">Orders</p>
+                        <p class="text-xl font-bold text-green-300">{{ orders }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+            <a href="/download-cleaned" class="block rounded-lg shadow-lg text-center py-3 px-4 bg-green-600 hover:bg-green-500 transition-colors">
+                <h2 class="text-lg font-bold text-white">Download Cleaned Dataset</h2>
+            </a>
+
+            <a href="/download" class="block rounded-lg shadow-lg text-center py-3 px-4 bg-blue-600 hover:bg-blue-500 transition-colors">
+                <h2 class="text-lg font-bold text-white">Download Final Dataset</h2>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

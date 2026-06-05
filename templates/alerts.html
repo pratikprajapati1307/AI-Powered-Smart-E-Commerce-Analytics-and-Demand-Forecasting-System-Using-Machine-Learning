@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alerts</title>
+ 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+ 
+<body class="bg-gray-900 text-white">
+<div class="fixed left-0 top-0 h-full w-64 bg-gray-800 p-6 shadow-lg">
+    <h2 class="text-2xl font-bold text-green-400 mb-6">AI Analytics</h2>
+ 
+    <div class="space-y-4">
+        <a href="/" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Home</a>
+        <a href="/dashboard" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Dashboard</a>
+        <a href="/alerts" class="block bg-green-500 py-2 text-center rounded-lg">Alerts</a>
+        <a href="/reports" class="block bg-gray-700 hover:bg-green-500 py-2 text-center rounded-lg">Reports</a>
+    </div>
+</div>
+ 
+<div class="ml-64 p-6">
+    <div class="rounded-xl border border-red-500/20 bg-gray-800 p-5 shadow-lg">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-xs uppercase tracking-[0.2em] text-red-300">Inventory Risk Desk</p>
+                <h1 class="mt-2 text-2xl font-bold text-white">Smart Alerts</h1>
+                <p class="mt-2 text-sm text-gray-400">
+                    Analysis date {{ analysis_date_display }}. Reorder timing uses a {{ lead_time_days }}-day lead time and {{ forecast_days }}-day demand forecast.
+                </p>
+            </div>
+            <div class="rounded-lg border border-red-400/20 bg-red-500/10 px-4 py-3 text-right">
+                <p class="text-xs uppercase tracking-wide text-red-200">Revenue At Risk</p>
+                <p class="mt-1 text-2xl font-bold text-red-300">{{ total_revenue_at_risk_display }}</p>
+            </div>
+        </div>
+    </div>
+ 
+    <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-4">
+        <div class="rounded-xl bg-gray-800 p-4 text-center shadow-lg">
+            <h3 class="text-gray-400">Products</h3>
+            <p class="text-2xl font-bold">{{ alerts|length }}</p>
+        </div>
+        <div class="rounded-xl bg-gray-800 p-4 text-center shadow-lg">
+            <h3 class="text-gray-400">Stockout Risk</h3>
+            <p class="text-2xl font-bold text-red-400">{{ stockout_count }}</p>
+        </div>
+        <div class="rounded-xl bg-gray-800 p-4 text-center shadow-lg">
+            <h3 class="text-gray-400">Balanced</h3>
+            <p class="text-2xl font-bold text-green-400">{{ balanced_count }}</p>
+        </div>
+        <div class="rounded-xl bg-gray-800 p-4 text-center shadow-lg">
+            <h3 class="text-gray-400">Overstock</h3>
+            <p class="text-2xl font-bold text-yellow-400">{{ overstock_count }}</p>
+        </div>
+        
+    </div>
+ 
+    <div class="mt-8 rounded-xl border border-red-500/20 bg-gray-800 p-5 shadow-lg">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-red-300">Priority Banner</h2>
+                
+            </div>
+            <span class="rounded-full bg-red-500/10 px-3 py-1 text-xs text-red-200">Top 5 urgent items</span>
+        </div>
+ 
+        {% if priority_items %}
+        <div class="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-5">
+            {% for item in priority_items %}
+            <div class="rounded-lg border border-red-500/20 bg-gray-900/70 p-4">
+                <p class="text-sm font-semibold text-white">{{ item.product_name }}</p>
+                <p class="mt-2 text-xl font-bold text-red-300">Rs {{ "{:,.0f}".format(item.revenue_at_risk) }}</p>
+                <div class="mt-3 space-y-1 text-xs text-gray-400">
+                    <p>Stock left: <span class="text-gray-200">{{ item.current_stock }}</span></p>
+                    <p>{{ forecast_days }}-day demand: <span class="text-gray-200">{{ item.predicted_sales_next_Ndays }}</span></p>
+                    <p>Reorder by: <span class="text-gray-200">{{ item.reorder_date }}</span></p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="mt-5 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-200">
+            No immediate revenue-at-risk items detected in the current forecast window.
+        </div>
+        {% endif %}
+    </div>
+ 
+    <div class="mt-8 space-y-6">
+        <div class="rounded-xl border border-red-500/20 bg-gray-800 p-5 shadow-lg">
+            <div class="mb-3 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-red-300">Stockout List</h2>
+                    
+                </div>
+                <span class="text-sm text-red-300">Total: {{ understock_items|length }}</span>
+            </div>
+            <div class="max-h-[28rem] overflow-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-gray-300">
+                            <th>Product</th>
+                            <th>Stock</th>
+                            <th>Days Left</th>
+                            <th>Avg Daily</th>
+                            <th>Pred Daily</th>
+                            <th>7-Day Risk</th>
+                            <th>Reorder Date</th>
+                            <th>Volatility</th>
+                            <th>Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in understock_items %}
+                        <tr>
+                            <td class="font-medium text-white">{{ item.product_name }}</td>
+                            <td>{{ item.current_stock }}</td>
+                            <td>{{ item.days_of_stock_left }}</td>
+                            <td>{{ item.avg_daily_sales }}</td>
+                            <td>{{ item.predicted_daily_sales }}</td>
+                            <td class="text-red-300">Rs {{ "{:,.0f}".format(item.revenue_at_risk) }}</td>
+                            <td>{{ item.reorder_date }}</td>
+                            <td>
+                                <span class="rounded-full px-2 py-1 text-xs {% if item.volatility_score == 'High' %}bg-red-500/15 text-red-200{% elif item.volatility_score == 'Medium' %}bg-yellow-500/15 text-yellow-200{% else %}bg-green-500/15 text-green-200{% endif %}">
+                                    {{ item.volatility_score }}
+                                </span>
+                            </td>
+                            <td class="text-red-300">{{ item.recommendation }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+ 
+        <div class="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 shadow-lg">
+            <div class="mb-3 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-yellow-300">Overstock List</h2>
+                   
+                </div>
+                <span class="text-sm text-yellow-300">Total: {{ overstock_items|length }}</span>
+            </div>
+            <div class="max-h-[28rem] overflow-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-gray-300">
+                            <th>Product</th>
+                            <th>Stock</th>
+                            <th>Days Left</th>
+                            <th>Avg Daily</th>
+                            <th>Pred Daily</th>
+                            <th>7-Day Risk</th>
+                            <th>Reorder Date</th>
+                            <th>Volatility</th>
+                            <th>Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in overstock_items %}
+                        <tr>
+                            <td class="font-medium text-white">{{ item.product_name }}</td>
+                            <td>{{ item.current_stock }}</td>
+                            <td>{{ item.days_of_stock_left }}</td>
+                            <td>{{ item.avg_daily_sales }}</td>
+                            <td>{{ item.predicted_daily_sales }}</td>
+                            <td class="text-yellow-300">Rs {{ "{:,.0f}".format(item.revenue_at_risk) }}</td>
+                            <td>{{ item.reorder_date }}</td>
+                            <td>
+                                <span class="rounded-full px-2 py-1 text-xs {% if item.volatility_score == 'High' %}bg-red-500/15 text-red-200{% elif item.volatility_score == 'Medium' %}bg-yellow-500/15 text-yellow-200{% else %}bg-green-500/15 text-green-200{% endif %}">
+                                    {{ item.volatility_score }}
+                                </span>
+                            </td>
+                            <td class="text-yellow-300">{{ item.recommendation }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+ 
+        <div class="rounded-xl border border-green-500/20 bg-gray-800 p-5 shadow-lg">
+            <div class="mb-3 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-green-300">Balanced List</h2>
+                    
+                </div>
+                <span class="text-sm text-green-300">Total: {{ balanced_items|length }}</span>
+            </div>
+            <div class="max-h-[28rem] overflow-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-gray-300">
+                            <th>Product</th>
+                            <th>Stock</th>
+                            <th>Days Left</th>
+                            <th>Avg Daily</th>
+                            <th>Pred Daily</th>
+                            <th>7-Day Risk</th>
+                            <th>Reorder Date</th>
+                            <th>Volatility</th>
+                            <th>Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in balanced_items %}
+                        <tr>
+                            <td class="font-medium text-white">{{ item.product_name }}</td>
+                            <td>{{ item.current_stock }}</td>
+                            <td>{{ item.days_of_stock_left }}</td>
+                            <td>{{ item.avg_daily_sales }}</td>
+                            <td>{{ item.predicted_daily_sales }}</td>
+                            <td class="text-green-300">Rs {{ "{:,.0f}".format(item.revenue_at_risk) }}</td>
+                            <td>{{ item.reorder_date }}</td>
+                            <td>
+                                <span class="rounded-full px-2 py-1 text-xs {% if item.volatility_score == 'High' %}bg-red-500/15 text-red-200{% elif item.volatility_score == 'Medium' %}bg-yellow-500/15 text-yellow-200{% else %}bg-green-500/15 text-green-200{% endif %}">
+                                    {{ item.volatility_score }}
+                                </span>
+                            </td>
+                            <td class="text-green-300">{{ item.recommendation }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+ 
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
